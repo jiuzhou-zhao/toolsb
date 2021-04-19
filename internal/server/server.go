@@ -3,18 +3,19 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"image/color"
-	"image/png"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-
 	"github.com/gorilla/mux"
 	"github.com/issue9/identicon"
 	toolpb "github.com/sbasestarter/proto-repo/gen/protorepo-tool-go"
 	"github.com/sbasestarter/toolsb/internal/config"
+	"html/template"
+	"image/color"
+	"image/png"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 type Server struct {
@@ -58,10 +59,24 @@ func (s *Server) GetHTTPHandler() http.Handler {
 
 		if err == nil {
 			d = s.generatePixelAvatar(context.Background(), req.Size, req.Fore, req.Back, req.Text)
-			writer.Header().Set("Content-Disposition", "attachment; filename=avatar.png")
-			writer.Header().Set("Content-Type", "image/png")
-			writer.Header().Set("Content-Length", strconv.FormatInt(int64(len(d)), 10))
-			_, _ = writer.Write(d)
+			/*
+				writer.Header().Set("Content-Disposition", "attachment; filename=avatar.png")
+				writer.Header().Set("Content-Type", "image/png")
+				writer.Header().Set("Content-Length", strconv.FormatInt(int64(len(d)), 10))
+				_, _ = writer.Write(d)
+			*/
+			imageTemplate := `<!DOCTYPE html>
+<html lang="en"><head></head>
+<body><img src="data:image/jpg;base64,{{.Image}}"></body>`
+			str := base64.StdEncoding.EncodeToString(d)
+			if tmpl, err := template.New("image").Parse(imageTemplate); err != nil {
+				log.Println("unable to parse image template.")
+			} else {
+				data := map[string]interface{}{"Image": str}
+				if err = tmpl.Execute(writer, data); err != nil {
+					log.Println("unable to execute template.")
+				}
+			}
 		} else {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_, _ = writer.Write([]byte(err.Error()))
