@@ -1,2 +1,4 @@
 GRpcServerConfig:
   Address: ":1333"
+HttpServerConfig:
+  Address: ":1334"

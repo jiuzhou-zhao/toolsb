@@ -6,4 +6,5 @@ import (
 
 type Config struct {
 	GRpcServerConfig servicetoolset.GRpcServerConfig
+	HttpServerConfig servicetoolset.HttpServerConfig
 }

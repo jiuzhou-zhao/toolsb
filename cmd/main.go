@@ -31,9 +31,12 @@ func main() {
 		return
 	}
 
+	serverImpl := server.NewServer(&cfg)
 	serviceToolset := servicetoolset.NewServerToolset(context.Background(), loggerChain)
 	_ = serviceToolset.CreateGRpcServer(&cfg.GRpcServerConfig, nil, func(s *grpc.Server) {
-		toolpb.RegisterUserServiceServer(s, server.NewServer(&cfg))
+		toolpb.RegisterUserServiceServer(s, serverImpl)
 	})
+	cfg.HttpServerConfig.Handler = serverImpl.GetHTTPHandler()
+	_ = serviceToolset.CreateHttpServer(&cfg.HttpServerConfig)
 	serviceToolset.Wait()
 }
